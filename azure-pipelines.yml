@@ -1,0 +1,58 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+
+variables:
+  buildFolderName: output
+  testResultFolderName: testResults
+  defaultBranch: main
+  azureServiceConnectionName: '#TODO' # Service Connection used in AzurePowerShell tasks. Create in Project Settings.
+  automationAccountName: '#TODO'  # Automation Account hosting the Pull Server
+  automationResourceGroup: '#TODO' # Resource Group of Automation Account
+  storageAccountName: '#TODO' # Storage Account to host zipped modules for import into Azure Automation Modules
+  storageAccountResourceGroup: '#TODO' # Resource Group of Storage Account
+  storageContainerName: modules # Name of storage container that will store the module zips for an upload to AA
+  Agent.Source.Git.ShallowFetchDepth: 0
+
+pool:
+  vmImage: windows-2019
+
+steps:
+  - task: AzurePowerShell@5
+    name: deployConfToAzAutomation
+    displayName: Deploy to Azure Automation Pull
+    inputs:
+      azureSubscription: $(azureServiceConnectionName)
+      scriptType: 'inlineScript' # Optional. Options: filePath, inlineScript
+      inline: |
+        $confPath = "$(Build.SourcesDirectory)/Configurations"
+        foreach ($conf in (Get-ChildItem -Path $confPath -Filter *.ps1))
+        {
+            Import-AzAutomationDscConfiguration -SourcePath  $conf.FullName -AutomationAccountName $env:automationAccountName -ResourceGroupName $env:automationResourceGroup -Published -Force 
+        }
+      errorActionPreference: 'stop'
+      failOnStandardError: false
+      azurePowerShellVersion: 'latestVersion'
+      pwsh: false
+
+  - task: AzurePowerShell@5
+    name: CompileConfToAzAutomation
+    displayName: Deploy to Azure Automation Pull
+    inputs:
+      azureSubscription: $(azureServiceConnectionName)
+      scriptType: 'inlineScript' # Optional. Options: filePath, inlineScript
+      inline: |
+        $confPath = "$(Build.SourcesDirectory)/Configurations"
+        foreach ($conf in (Get-ChildItem -Path $confPath -Filter *.ps1))
+        {
+          $confName = $conf.Name -replace ".ps1"
+          Get-AzAutomationDscConfiguration -ResourceGroupName $env:automationResourceGroup -AutomationAccountName $env:automationAccountName -Name $confName | Start-AzAutomationDscCompilationJob
+        }
+      errorActionPreference: 'stop'
+      failOnStandardError: false
+      azurePowerShellVersion: 'latestVersion'
+      pwsh: false
