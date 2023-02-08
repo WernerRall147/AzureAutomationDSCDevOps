@@ -2,7 +2,7 @@
 This solution will allow you to use a Repo to store your Desired State Configurations and then use a Pipeline to push these configurations to Azure Automation Account DSC. The Automation account will comile your .ps1 files and you can then assign them to required nodes. 
 
 # Design
-![image](.\Architecture/Design.jpg)
+![image](./Architecture/Design.jpg)
 # Pre-Requistes 
 1.	Create an Azure Automation Account
 2.	Create a DevOps Project
