@@ -2,57 +2,130 @@
 # Start with a minimal pipeline that you can customize to build and deploy your code.
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
-
+---
 trigger:
-- main
-
-variables:
-  buildFolderName: output
-  testResultFolderName: testResults
-  defaultBranch: main
-  azureServiceConnectionName: '#TODO' # Service Connection used in AzurePowerShell tasks. Create in Project Settings.
-  automationAccountName: '#TODO'  # Automation Account hosting the Pull Server
-  automationResourceGroup: '#TODO' # Resource Group of Automation Account
-  storageAccountName: '#TODO' # Storage Account to host zipped modules for import into Azure Automation Modules
-  storageAccountResourceGroup: '#TODO' # Resource Group of Storage Account
-  storageContainerName: modules # Name of storage container that will store the module zips for an upload to AA
-  Agent.Source.Git.ShallowFetchDepth: 0
-
+  - main
 pool:
-  vmImage: windows-2019
+  vmImage: windows-latest
+variables:
+  AzureServiceConnectionName: #TODO
+  devAutomationAccountName: #TODO
+  devAutomationResourceGroup: #TODO
+  testAutomationAccountName: #TODO
+  testAutomationResourceGroup: #TODO
+  prodAutomationAccountName: #TODO
+  prodAutomationResourceGroup: #TODO
+stages:
+  - stage: Build
+    jobs:
+      - job: Build
+        steps:
+          - powershell: foreach($conf in (Get-ChildItem -Path
+              $(Build.SourcesDirectory)/Configurations -Filter *.ps1)){Out-File
+              $env:BUILD_ARTIFACTSTAGINGDIRECTORY/$conf}
+          - task: PublishBuildArtifacts@1
+            inputs:
+              pathToPublish: $(Build.ArtifactStagingDirectory)
+              artifactName: configurations
+  - stage: Dev
+    dependsOn: Build
+    jobs:
+      - job: Dev
+        steps:
+        - task: AzurePowerShell@5
+          displayName: Import DSC to Automation Account
+          
+          inputs:
+            azureSubscription: SBDscDemoSC
+            ScriptType: InlineScript
+            Inline: >
+              $confPath = "$(Build.SourcesDirectory)/Configurations"
 
-steps:
-  - task: AzurePowerShell@5
-    name: deployConfToAzAutomation
-    displayName: Deploy to Azure Automation Pull
-    inputs:
-      azureSubscription: $(azureServiceConnectionName)
-      scriptType: 'inlineScript' # Optional. Options: filePath, inlineScript
-      inline: |
-        $confPath = "$(Build.SourcesDirectory)/Configurations"
-        foreach ($conf in (Get-ChildItem -Path $confPath -Filter *.ps1))
-        {
-            Import-AzAutomationDscConfiguration -SourcePath  $conf.FullName -AutomationAccountName $env:automationAccountName -ResourceGroupName $env:automationResourceGroup -Published -Force 
-        }
-      errorActionPreference: 'stop'
-      failOnStandardError: false
-      azurePowerShellVersion: 'latestVersion'
-      pwsh: false
+              foreach ($conf in (Get-ChildItem -Path $confPath -Filter *.ps1))
 
-  - task: AzurePowerShell@5
-    name: CompileConfToAzAutomation
-    displayName: Deploy to Azure Automation Pull
-    inputs:
-      azureSubscription: $(azureServiceConnectionName)
-      scriptType: 'inlineScript' # Optional. Options: filePath, inlineScript
-      inline: |
-        $confPath = "$(Build.SourcesDirectory)/Configurations"
-        foreach ($conf in (Get-ChildItem -Path $confPath -Filter *.ps1))
-        {
-          $confName = $conf.Name -replace ".ps1"
-          Get-AzAutomationDscConfiguration -ResourceGroupName $env:automationResourceGroup -AutomationAccountName $env:automationAccountName -Name $confName | Start-AzAutomationDscCompilationJob
-        }
-      errorActionPreference: 'stop'
-      failOnStandardError: false
-      azurePowerShellVersion: 'latestVersion'
-      pwsh: false
+              {
+                  Import-AzAutomationDscConfiguration -SourcePath  $conf.FullName -AutomationAccountName $env:devAutomationAccountName -ResourceGroupName $env:devAutomationResourceGroup -Published -Force 
+              }
+            azurePowerShellVersion: LatestVersion
+        - task: AzurePowerShell@5
+          displayName: Start DSC Compilation on Automation Account
+          
+          inputs:
+            azureSubscription: SBDscDemoSC
+            ScriptType: InlineScript
+            Inline: >
+              $confPath = "$(Build.SourcesDirectory)/Configurations"
+
+              foreach ($conf in (Get-ChildItem -Path $confPath -Filter *.ps1))
+
+              {
+                $confName = $conf.Name -replace ".ps1"
+                Get-AzAutomationDscConfiguration -ResourceGroupName $env:devAutomationResourceGroup -AutomationAccountName $env:devAutomationAccountName -Name $confName | Start-AzAutomationDscCompilationJob
+              }
+            azurePowerShellVersion: LatestVersion
+  - stage: Test
+    dependsOn: Dev
+    jobs:
+      - job: Test
+        steps:
+        - task: AzurePowerShell@5
+          displayName: Import DSC to Automation Account
+          inputs:
+            azureSubscription: SBDscDemoSC
+            ScriptType: InlineScript
+            Inline: >
+              $confPath = "$(Build.SourcesDirectory)/Configurations"
+
+              foreach ($conf in (Get-ChildItem -Path $confPath -Filter *.ps1))
+
+              {
+                  Import-AzAutomationDscConfiguration -SourcePath  $conf.FullName -AutomationAccountName $env:testAutomationAccountName -ResourceGroupName $env:testAutomationResourceGroup -Published -Force 
+              }
+            azurePowerShellVersion: LatestVersion
+        - task: AzurePowerShell@5
+          displayName: Start DSC Compilation on Automation Account
+          inputs:
+            azureSubscription: SBDscDemoSC
+            ScriptType: InlineScript
+            Inline: >
+              $confPath = "$(Build.SourcesDirectory)/Configurations"
+
+              foreach ($conf in (Get-ChildItem -Path $confPath -Filter *.ps1))
+
+              {
+                $confName = $conf.Name -replace ".ps1"
+                Get-AzAutomationDscConfiguration -ResourceGroupName $env:testAutomationResourceGroup -AutomationAccountName $env:testAutomationAccountName -Name $confName | Start-AzAutomationDscCompilationJob
+              }
+            azurePowerShellVersion: LatestVersion
+  - stage: Prod
+    dependsOn: Test
+    jobs:
+      - job: Prod
+        steps:
+        - task: AzurePowerShell@5
+          displayName: Import DSC to Automation Account
+          inputs:
+            azureSubscription: SBDscDemoSC
+            ScriptType: InlineScript
+            Inline: >
+              $confPath = "$(Build.SourcesDirectory)/Configurations"
+
+              foreach ($conf in (Get-ChildItem -Path $confPath -Filter *.ps1))
+
+              {
+                  Import-AzAutomationDscConfiguration -SourcePath  $conf.FullName -AutomationAccountName $env:prodAutomationAccountName -ResourceGroupName $env:prodAutomationResourceGroup -Published -Force 
+              }
+            azurePowerShellVersion: LatestVersion
+        - task: AzurePowerShell@5
+          displayName: Start DSC Compilation on Automation Account
+          inputs:
+            azureSubscription: SBDscDemoSC
+            ScriptType: InlineScript
+            Inline: >
+              $confPath = "$(Build.SourcesDirectory)/Configurations"
+                foreach ($conf in (Get-ChildItem -Path $confPath -Filter *.ps1))
+                {
+                  $confName = $conf.Name -replace ".ps1"
+                  Get-AzAutomationDscConfiguration -ResourceGroupName $env:prodAutomationResourceGroup -AutomationAccountName $env:prodAutomationAccountName -Name $confName | Start-AzAutomationDscCompilationJob
+                }
+            azurePowerShellVersion: LatestVersion
