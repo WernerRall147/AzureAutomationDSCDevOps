@@ -39,26 +39,26 @@ nameserver 10.185.85.11
     }
 
     nxScript timeConf {
-        SetScript = @'
-    #!/bin/bash
-    sudo cp /usr/share/zoneinfo/Africa/Johannesburg /etc/localtime
-    '@
-        TestScript = @'
-    #!/bin/bash
-    timezone=`timedatectl status | grep "zone"`
-    if [ $timezone -contains "Johannesburg"]
-    then
-        exit 0
-    else
-        exit 1
-    fi
-    '@
-        GetScript = @'
-    #!/bin/bash
-    timedatectl status | grep "zone"
-    '@
+SetScript = @'
+#!/bin/bash
+sudo cp /usr/share/zoneinfo/Africa/Johannesburg /etc/localtime
+'@
+
+TestScript = @'
+#!/bin/bash
+timezone=`timedatectl status | grep "zone"`
+if [ $timezone -contains "Johannesburg"]
+then
+    exit 0
+else
+    exit 1
+fi
+'@
+
+GetScript = @'
+#!/bin/bash
+timedatectl status | grep "zone"
+'@
     }
-
 }
-
 }
