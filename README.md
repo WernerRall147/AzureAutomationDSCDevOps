@@ -17,6 +17,8 @@ This solution will allow you to use a Repo to store your Desired State Configura
 # Enabling Physical/Virtual Linux Machine
 [Microsoft Official Guidance](https://learn.microsoft.com/en-us/azure/automation/automation-dsc-onboarding#enable-physicalvirtual-linux-machines)
 
+The Linux onboarding scripts can also be found in [Here](https://github.com/microsoft/PowerShell-DSC-for-Linux/tree/master/LCM/scripts)
+
 # Understanding the built-in resources
 
 There are many great built-in resources that are ready to use. For more information refer to the below. 
