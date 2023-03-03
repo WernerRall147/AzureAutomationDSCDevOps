@@ -12,4 +12,14 @@ This solution will allow you to use a Repo to store your Desired State Configura
 1.	Clone this Repo to your local Machine
 2.	Write your configuration code and save it in Configurations Folder as a .ps1 File
 3.	Commit your code to the repo. Upon Commit the code will kick off a build Pipeline and this will push the code to your Automation Account
+4. You can then assign the Nodes in the Automation Account as required
 
+# Enabling Physical/Virtual Linux Machine
+[Microsoft Official Guidance](https://learn.microsoft.com/en-us/azure/automation/automation-dsc-onboarding#enable-physicalvirtual-linux-machines)
+
+# Understanding the built-in resources
+
+There are many great built-in resources that are ready to use. For more information refer to the below. 
+
+[Windows](https://learn.microsoft.com/en-us/powershell/dsc/reference/resources/windows/archiveresource?view=dsc-1.1)
+[Linux](https://learn.microsoft.com/en-us/powershell/dsc/reference/resources/linux/lnxarchiveresource?view=dsc-1.1)
