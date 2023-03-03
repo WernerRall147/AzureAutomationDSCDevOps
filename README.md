@@ -20,6 +20,7 @@ This solution will allow you to use a Repo to store your Desired State Configura
 The Linux onboarding scripts can also be found in [Here](https://github.com/microsoft/PowerShell-DSC-for-Linux/tree/master/LCM/scripts)
 
 Step 1 : [Installing DSC Packages](https://github.com/Microsoft/PowerShell-DSC-for-Linux#installing-dsc-packages)
+[Git Repo for Packages](https://github.com/Microsoft/PowerShell-DSC-for-Linux/releases/tag/v1.2.1-0)
 
 Step 2 : Then /opt/microsoft/dsc/Scripts/Register.py <Automation account registration key> <Automation account registration URL>
 
